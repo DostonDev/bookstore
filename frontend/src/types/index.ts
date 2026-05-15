@@ -197,6 +197,7 @@ export interface AdminStats {
     totalUsers: number
     totalBooks: number
     totalDownloads: number
+    revenue?: number
   }
   topBooks: Book[]
   topCategories: Category[]
