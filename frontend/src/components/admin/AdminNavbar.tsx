@@ -2,12 +2,26 @@ import { Menu, Sun, Moon, Bell } from 'lucide-react'
 import { useUIStore } from '@/stores/ui.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useTheme } from 'next-themes'
+import { useLocation } from 'react-router-dom'
 import { getInitials } from '@/lib/utils'
+
+const ROUTE_LABELS: Record<string, string> = {
+  '/admin': 'Boshqaruv paneli',
+  '/admin/books': 'Kitoblar',
+  '/admin/categories': 'Kategoriyalar',
+  '/admin/authors': 'Mualliflar',
+  '/admin/blogs': 'Blog',
+  '/admin/users': 'Foydalanuvchilar',
+  '/admin/analytics': 'Analitika',
+}
 
 export function AdminNavbar() {
   const { toggleSidebar } = useUIStore()
   const { user } = useAuthStore()
   const { theme, setTheme } = useTheme()
+  const { pathname } = useLocation()
+
+  const pageTitle = ROUTE_LABELS[pathname] ?? 'Admin'
 
   return (
     <header className="h-16 border-b border-border bg-card/80 backdrop-blur-xl flex items-center px-6 gap-4 sticky top-0 z-30">
@@ -19,7 +33,7 @@ export function AdminNavbar() {
       </button>
 
       <div className="flex-1">
-        <h1 className="text-sm font-semibold text-muted-foreground hidden sm:block">Boshqaruv paneli</h1>
+        <h1 className="text-sm font-semibold hidden sm:block">{pageTitle}</h1>
       </div>
 
       <div className="flex items-center gap-2">

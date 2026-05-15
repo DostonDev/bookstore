@@ -88,7 +88,7 @@ export function AdminSidebar() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-2 overflow-y-auto">
           {NAV_ITEMS.map(({ icon: Icon, label, href }) => {
             const isActive = location.pathname === href
             return (
@@ -98,7 +98,7 @@ export function AdminSidebar() {
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors',
                     isActive
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/20'
+                      ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/25 dark:border-amber-500/20 font-semibold'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   )}
                 >
@@ -122,7 +122,7 @@ export function AdminSidebar() {
         </nav>
 
         {/* Bottom */}
-        <div className="p-3 border-t border-border space-y-1">
+        <div className="p-3 border-t border-border space-y-2">
           <Link to="/">
             <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
               <Home className="w-5 h-5 shrink-0" />

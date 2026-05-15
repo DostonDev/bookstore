@@ -38,8 +38,8 @@ export default function AdminAuthorsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-5 sm:mb-6">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Mualliflar</h1>
           <p className="text-muted-foreground mt-1">{authors.length} ta muallif</p>

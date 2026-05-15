@@ -11,6 +11,7 @@ import { useBooks } from '@/hooks/useBooks'
 import { useAllUsers } from '@/hooks/useUsers'
 import { formatNumber, cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
+import { useTheme } from 'next-themes'
 
 const downloadsData = [
   { month: 'Yan', downloads: 400, revenue: 2400 },
@@ -60,6 +61,10 @@ function StatCard({ icon: Icon, label, value, change, color }: {
 export default function AdminDashboardPage() {
   const { data: booksData } = useBooks({ limit: 5 })
   const { data: usersData } = useAllUsers({ limit: 5 })
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)'
+  const tickColor = isDark ? '#a1a1aa' : '#71717a'
 
   const totalBooks = booksData?.pagination?.total || 0
   const totalUsers = usersData?.pagination?.total || 0
@@ -96,12 +101,13 @@ export default function AdminDashboardPage() {
                   <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                 </linearGradient>
                 </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="month" tick={{ fontSize: 12, fill: tickColor }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: tickColor }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
               />
               <Area type="monotone" dataKey="downloads" stroke="#f59e0b" strokeWidth={2} fill="url(#downloadGrad)" />
             </AreaChart>

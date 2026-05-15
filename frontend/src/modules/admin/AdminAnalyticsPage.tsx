@@ -6,6 +6,7 @@ import {
 import { Users, BookOpen, Download, TrendingUp, DollarSign } from 'lucide-react'
 import { useAdminStats } from '@/hooks/useAnalytics'
 import { formatNumber, formatPrice } from '@/lib/utils'
+import { useTheme } from 'next-themes'
 
 const STAT_CARDS = [
   { key: 'totalUsers', label: 'Foydalanuvchilar', icon: Users, color: 'violet' },
@@ -15,10 +16,14 @@ const STAT_CARDS = [
 
 export default function AdminAnalyticsPage() {
   const { data, isLoading } = useAdminStats()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)'
+  const tickColor = isDark ? '#a1a1aa' : '#71717a'
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 space-y-4 animate-pulse">
+      <div className="space-y-4 animate-pulse">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-28 bg-muted rounded-2xl" />
@@ -32,7 +37,7 @@ export default function AdminAnalyticsPage() {
   if (!data) return null
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Analitika</h1>
         <p className="text-muted-foreground mt-1">Loyiha statistikasi</p>
@@ -85,12 +90,13 @@ export default function AdminAnalyticsPage() {
           </h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={data.charts.userGrowth}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#71717a' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#71717a' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                labelStyle={{ color: '#e4e4e7' }}
+                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
               />
               <Area type="monotone" dataKey="value" stroke="#f59e0b" fill="#f59e0b20" strokeWidth={2} />
             </AreaChart>
@@ -109,11 +115,13 @@ export default function AdminAnalyticsPage() {
           </h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data.charts.downloadGrowth}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#71717a' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#71717a' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
+                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
               />
               <Bar dataKey="value" fill="#f59e0b" radius={[4, 4, 0, 0]} />
             </BarChart>
