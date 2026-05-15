@@ -4,3 +4,4 @@ node_modules/
 dist/
 backend.log
 frontend.log
+frontend/node_modules/
