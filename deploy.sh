@@ -1,8 +1,15 @@
 #!/bin/bash
 set -e
 
-echo "🔨 Frontend build..."
+echo "🔨 Frontend build (production)..."
 cd frontend
+
+# .env.production mavjud bo'lmasa yaratamiz
+if [ ! -f .env.production ]; then
+  echo "VITE_API_URL=https://bookstore-eta-steel.vercel.app" > .env.production
+  echo "✅ .env.production yaratildi"
+fi
+
 npm run build
 
 echo "📦 Vercel output tayyorlanmoqda..."
