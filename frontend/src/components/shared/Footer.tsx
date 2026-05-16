@@ -58,7 +58,7 @@ export function Footer() {
 
         <div className="border-t border-border/50 mt-8 sm:mt-12 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">© 2026 EllikqalaBooks. Barcha huquqlar himoyalangan.</p>
-          <p className="text-xs text-muted-foreground">DastonDev tomonidan ♥ bilan yaratildi</p>
+          <p className="text-xs text-muted-foreground">DastonDev tomonidan <span className="text-red-500">♥</span> bilan yaratildi</p>
         </div>
       </div>
     </footer>
