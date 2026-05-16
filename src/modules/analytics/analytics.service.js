@@ -4,20 +4,16 @@ const getAdminStats = async () => {
   const [
     totalUsers,
     totalBooks,
-    totalOrders,
     totalDownloads,
     topBooks,
     topCategories,
     topAuthors,
     recentUsers,
-    recentOrders,
     userGrowth,
     downloadGrowth,
-    orderGrowth,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.book.count(),
-    prisma.order.count({ where: { status: "PAID" } }),
     prisma.downloadHistory.count(),
 
     prisma.book.findMany({
@@ -26,7 +22,6 @@ const getAdminStats = async () => {
       include: {
         author: { select: { name: true } },
         category: { select: { name: true } },
-        _count: { select: { orders: true } },
       },
     }),
 
@@ -48,17 +43,6 @@ const getAdminStats = async () => {
       select: { id: true, name: true, email: true, role: true, createdAt: true },
     }),
 
-    prisma.order.findMany({
-      take: 5,
-      where: { status: "PAID" },
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: { select: { id: true, name: true, email: true } },
-        book: { select: { id: true, title: true, price: true } },
-      },
-    }),
-
-    // Monthly user growth (last 6 months)
     prisma.$queryRaw`
       SELECT DATE_TRUNC('month', "createdAt") as month,
              COUNT(*)::int as count
@@ -68,7 +52,6 @@ const getAdminStats = async () => {
       ORDER BY month ASC
     `,
 
-    // Monthly download growth
     prisma.$queryRaw`
       SELECT DATE_TRUNC('month', "createdAt") as month,
              COUNT(*)::int as count
@@ -77,38 +60,17 @@ const getAdminStats = async () => {
       GROUP BY month
       ORDER BY month ASC
     `,
-
-    // Monthly order growth
-    prisma.$queryRaw`
-      SELECT DATE_TRUNC('month', "createdAt") as month,
-             COUNT(*)::int as count
-      FROM orders
-      WHERE status = 'PAID'
-        AND "createdAt" >= NOW() - INTERVAL '6 months'
-      GROUP BY month
-      ORDER BY month ASC
-    `,
   ]);
 
-  const revenueResult = await prisma.$queryRaw`
-    SELECT COALESCE(SUM(b.price), 0)::float AS revenue
-    FROM orders o
-    JOIN books b ON o."bookId" = b.id
-    WHERE o.status = 'PAID'
-  `;
-  const revenue = revenueResult[0]?.revenue || 0;
-
   return {
-    stats: { totalUsers, totalBooks, totalOrders, totalDownloads, revenue },
+    stats: { totalUsers, totalBooks, totalDownloads },
     topBooks,
     topCategories,
     topAuthors,
     recentUsers,
-    recentOrders,
     charts: {
       userGrowth: formatChartData(userGrowth),
       downloadGrowth: formatChartData(downloadGrowth),
-      orderGrowth: formatChartData(orderGrowth),
     },
   };
 };

@@ -5,18 +5,13 @@ const { createSignedUrl } = require("../../utils/supabase");
 const getReadUrl = async (bookId, userId) => {
   const book = await prisma.book.findUnique({ where: { id: bookId } });
   if (!book) throw { status: 404, message: "Kitob topilmadi." };
-
-  const hasPurchased = await prisma.order.findFirst({
-    where: { userId, bookId, status: "PAID" },
-  });
-  if (!hasPurchased && book.price > 0) {
-    throw { status: 403, message: "Bu kitobni o'qish uchun avval sotib olishingiz kerak." };
-  }
+  if (!book.pdfUrl) throw { status: 404, message: "Bu kitobning PDF fayli hali yuklanmagan." };
 
   const urlParts = book.pdfUrl.split(`/${process.env.SUPABASE_BUCKET_NAME}/`);
   const filePath = urlParts[1];
-  const url = await createSignedUrl(filePath, 3600);
+  if (!filePath) throw { status: 404, message: "PDF fayl manzili noto'g'ri." };
 
+  const url = await createSignedUrl(filePath, 3600);
   const progress = await repo.findProgress(userId, bookId);
 
   return { url, progress };
