@@ -5,10 +5,25 @@ import { Footer } from '@/components/shared/Footer'
 import { SearchModal } from '@/components/shared/SearchModal'
 import { TopLoader } from '@/components/shared/TopLoader'
 
+const MARQUEE_TEXT = '🚧 Bu sayt hozircha sinov (test) rejimida ishlayabdi — ba\'zi funksiyalar to\'liq ishlamasligi mumkin'
+
+function TestModeBanner() {
+  const content = Array(6).fill(MARQUEE_TEXT).join('   ·   ')
+  return (
+    <div className="bg-amber-500/10 border-b border-amber-500/20 overflow-hidden py-1.5 select-none">
+      <div className="animate-marquee flex whitespace-nowrap w-max">
+        <span className="text-xs text-amber-400 font-medium px-6">{content}</span>
+        <span className="text-xs text-amber-400 font-medium px-6" aria-hidden>{content}</span>
+      </div>
+    </div>
+  )
+}
+
 export function MainLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopLoader />
+      <TestModeBanner />
       <Navbar />
       <SearchModal />
       <main className="flex-1">

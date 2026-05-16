@@ -46,7 +46,9 @@ export function CategoryCard({ category, index = 0 }: Props) {
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{category.description}</p>
           )}
           <div className="flex items-center justify-between mt-3">
-            <span className="text-xs text-muted-foreground">{category._count?.books || 0} kitob</span>
+            <span className="text-xs text-muted-foreground">
+              {(category._count?.books ?? 0) + (category.children?.reduce((s, c) => s + (c._count?.books ?? 0), 0) ?? 0)} kitob
+            </span>
             <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
           </div>
         </div>
