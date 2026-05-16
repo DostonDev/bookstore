@@ -3,21 +3,23 @@ import { BookOpen } from 'lucide-react'
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/50 bg-background/50 mt-12 sm:mt-20">
-      <div className="container mx-auto py-8 sm:py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
-          <div className="col-span-2 md:col-span-2">
-            <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-amber-400" />
+    <footer className="border-t border-border/40 bg-muted/20 mt-12 sm:mt-20">
+      <div className="container mx-auto py-10 sm:py-14">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="col-span-2">
+            <Link to="/" className="flex items-center gap-2.5 mb-4 group w-fit">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-sm">
+                <BookOpen className="w-4.5 h-4.5 text-white" />
               </div>
-              <span className="font-bold text-lg">EllikqalaBooks</span>
+              <span className="font-bold text-lg">
+                <span className="text-amber-500">Ellikqala</span>Books
+              </span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
               O'zbek va jahon adabiyotining eng yaxshi asarlarini bir joyda toping. O'qing, o'rganing va ruhlanib yashang.
             </p>
-            <p className="text-muted-foreground text-xs mt-4 italic">
-              "Kitob — eng yaxshi do'st." — Alisher Navoiy
+            <p className="text-muted-foreground text-xs mt-5 italic border-l-2 border-amber-500/40 pl-3">
+              "Kitob o'qigan kishi hech qachon yolg'iz qolmaydi." — Alisher Navoiy
             </p>
           </div>
 

@@ -32,4 +32,5 @@ npx vercel deploy --prebuilt --prod --yes
 
 cd ..
 echo "✅ Deploy tugadi!"
-echo "🌐 https://bookstore-frontend-ten-sage.vercel.app"
+echo "🌐 https://ellikqalabooks.vercel.app"
+

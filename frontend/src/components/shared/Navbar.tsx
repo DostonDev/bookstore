@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookOpen, User, LogOut,
   Bookmark, LayoutDashboard, Menu, X, Sun, Moon,
-  Grid3X3, Users, Newspaper, Heart,
+  Grid3X3, Users, Newspaper, Heart, Search,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
+import { useUIStore } from '@/stores/ui.store'
 import { useTheme } from 'next-themes'
 import { cn, getInitials } from '@/lib/utils'
 import { useState } from 'react'
@@ -24,6 +25,7 @@ const AUTH_LINKS = [
 
 export function Navbar() {
   const { isAuthenticated, isAdmin, user, logout } = useAuthStore()
+  const { setSearchOpen } = useUIStore()
   const { theme, setTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -40,14 +42,16 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur-xl">
         <div className="container mx-auto flex h-14 sm:h-16 items-center gap-2 sm:gap-4">
           {/* Logo */}
-          <Link to="/" onClick={closeAll} className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
-              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+          <Link to="/" onClick={closeAll} className="flex items-center gap-2 shrink-0 group">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-sm group-hover:shadow-amber-500/30 group-hover:shadow-md transition-shadow">
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
             </div>
-            <span className="font-bold text-base hidden sm:block">EllikqalaBooks</span>
+            <span className="font-bold text-base hidden sm:block">
+              <span className="text-amber-500">Ellikqala</span>Books
+            </span>
           </Link>
 
           {/* Desktop nav */}
@@ -78,7 +82,22 @@ export function Navbar() {
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-1 sm:gap-2">
+          {/* Search trigger (desktop) */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/50 border border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/80 transition-all text-sm"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span className="text-xs">Qidirish...</span>
+          </button>
+
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            {/* Search (mobile) */}
+            <button onClick={() => setSearchOpen(true)}
+              className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <Search className="w-4 h-4" />
+            </button>
+
             {/* Theme */}
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">

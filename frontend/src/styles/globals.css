@@ -63,61 +63,46 @@
   .glass {
     @apply backdrop-blur-xl bg-white/70 border border-black/10;
   }
-
   .dark .glass {
     @apply bg-white/5 border-white/10;
   }
-
   .glass-card {
     @apply backdrop-blur-2xl bg-white/80 border border-black/[0.08] shadow-2xl;
   }
-
   .dark .glass-card {
     @apply bg-white/[0.03] border-white/[0.08];
   }
-
   .gradient-text {
     @apply bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent;
   }
-
   .gradient-bg {
     @apply bg-gradient-to-br from-amber-600/20 via-orange-600/10 to-yellow-600/20;
   }
-
   .premium-border {
     @apply border border-white/10 hover:border-white/20 transition-colors;
   }
-
   .shimmer-effect {
     @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-shimmer before:bg-shimmer;
   }
-
-  .text-balance {
-    text-wrap: balance;
-  }
-
+  .text-balance { text-wrap: balance; }
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-top    { padding-top: env(safe-area-inset-top); }
+  .tap-target  { min-height: 44px; min-width: 44px; }
 
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  /* Dot grid hero pattern */
+  .dot-pattern {
+    background-image: radial-gradient(circle, hsl(var(--border)) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
   }
 
-  /* Safe area for mobile notch/home indicator */
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .safe-top {
-    padding-top: env(safe-area-inset-top);
-  }
-
-  /* Touch-friendly tap targets */
-  .tap-target {
-    min-height: 44px;
-    min-width: 44px;
+  /* Card hover lift */
+  .card-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl;
   }
 }
 

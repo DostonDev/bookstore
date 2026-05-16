@@ -17,10 +17,11 @@ function HeroSection() {
   return (
     <section className="relative min-h-[85vh] flex items-center overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-background to-background dark:from-amber-950/40" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-amber-600/8 rounded-full blur-3xl" />
-      <div className="absolute top-20 right-0 w-64 h-64 bg-orange-600/8 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-yellow-600/8 rounded-full blur-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/8 via-background to-background dark:from-amber-950/30" />
+      <div className="absolute inset-0 dot-pattern opacity-40 dark:opacity-20" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-amber-500/10 rounded-full blur-3xl" />
+      <div className="absolute top-20 right-0 w-72 h-72 bg-orange-500/8 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-yellow-500/8 rounded-full blur-3xl" />
 
       {/* Floating card */}
       <div className="absolute right-8 top-1/4 hidden xl:block">
