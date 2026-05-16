@@ -173,9 +173,19 @@ html {
   @apply bg-amber-500/30 text-white;
 }
 
-/* Focus ring */
-:focus-visible {
-  @apply outline-none ring-2 ring-amber-500 ring-offset-2 ring-offset-background;
+/* Focus ring — only for buttons/links, inputs manage their own */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="menuitem"]:focus-visible {
+  @apply outline-none ring-2 ring-amber-500/60 ring-offset-2 ring-offset-background;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
 }
 
 /* Page transitions */
