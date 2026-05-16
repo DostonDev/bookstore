@@ -6,12 +6,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(price: number | undefined | null): string {
-  if (price == null || isNaN(price)) return 'Free'
-  if (price === 0) return 'Free'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(price)
+  if (price == null || isNaN(price)) return 'Bepul'
+  if (price === 0) return 'Bepul'
+  return new Intl.NumberFormat('uz-UZ').format(price) + ' so\'m'
 }
 
 export function formatNumber(num: number | undefined | null): string {

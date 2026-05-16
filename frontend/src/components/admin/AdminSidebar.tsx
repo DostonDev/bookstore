@@ -67,7 +67,7 @@ export function AdminSidebar() {
                 <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
                   <BookOpen className="w-3.5 h-3.5 text-amber-400" />
                 </div>
-                <span className="font-bold text-sm">Kitobxona Admin</span>
+                <span className="font-bold text-sm">EllikqalaBooks Admin</span>
               </motion.div>
             )}
           </AnimatePresence>

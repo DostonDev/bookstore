@@ -21,7 +21,7 @@ export function AuthLayout() {
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-amber-400" />
             </div>
-            <span className="text-xl font-bold text-white">Kitobxona</span>
+            <span className="text-xl font-bold text-white">EllikqalaBooks</span>
           </Link>
 
           <div className="space-y-8">
@@ -62,7 +62,7 @@ export function AuthLayout() {
             </motion.div>
           </div>
 
-          <p className="text-slate-600 text-sm">© 2024 Kitobxona. Barcha huquqlar himoyalangan.</p>
+          <p className="text-slate-600 text-sm">© 2024 EllikqalaBooks. Barcha huquqlar himoyalangan.</p>
         </div>
       </div>
 
@@ -73,7 +73,7 @@ export function AuthLayout() {
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-amber-400" />
             </div>
-            <span className="text-xl font-bold">Kitobxona</span>
+            <span className="text-xl font-bold">EllikqalaBooks</span>
           </div>
           <Outlet />
         </div>

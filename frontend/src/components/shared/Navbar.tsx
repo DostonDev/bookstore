@@ -47,7 +47,7 @@ export function Navbar() {
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
               <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
             </div>
-            <span className="font-bold text-base hidden sm:block">Kitobxona</span>
+            <span className="font-bold text-base hidden sm:block">EllikqalaBooks</span>
           </Link>
 
           {/* Desktop nav */}

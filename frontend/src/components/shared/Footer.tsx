@@ -11,7 +11,7 @@ export function Footer() {
               <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
                 <BookOpen className="w-4 h-4 text-amber-400" />
               </div>
-              <span className="font-bold text-lg">Kitobxona</span>
+              <span className="font-bold text-lg">EllikqalaBooks</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
               O'zbek va jahon adabiyotining eng yaxshi asarlarini bir joyda toping. O'qing, o'rganing va ruhlanib yashang.
@@ -57,7 +57,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border/50 mt-8 sm:mt-12 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">© 2024 Kitobxona. Barcha huquqlar himoyalangan.</p>
+          <p className="text-xs text-muted-foreground">© 2024 EllikqalaBooks. Barcha huquqlar himoyalangan.</p>
           <p className="text-xs text-muted-foreground">Kitob sevuvchilar uchun ♥ bilan yaratildi</p>
         </div>
       </div>

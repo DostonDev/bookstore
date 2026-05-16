@@ -89,7 +89,6 @@ function HeroSection() {
             >
               <Search className="w-4 h-4 shrink-0" />
               <span>Asar qidirish...</span>
-              <kbd className="hidden sm:block text-xs bg-background border border-border rounded px-1.5 py-0.5 ml-auto">⌘K</kbd>
             </button>
             <Link
               to="/books"
@@ -226,7 +225,7 @@ function CTASection() {
           <BookOpen className="w-12 h-12 text-amber-400/60 mx-auto mb-4" />
           <h2 className="text-3xl font-bold mb-4">O'qishni bugun boshlang</h2>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-            Kitobxonaga qo'shiling va minglab adabiy asarlarga bepul kiring. Bilim — eng katta boylik.
+            EllikqalaBooksga qo'shiling va minglab adabiy asarlarga bepul kiring. Bilim — eng katta boylik.
           </p>
           <Link
             to="/register"

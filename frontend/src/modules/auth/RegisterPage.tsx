@@ -35,7 +35,7 @@ export default function RegisterPage() {
     mutationFn: (d: { name: string; email: string; password: string }) => authService.register(d),
     onSuccess: (data) => {
       setAuth(data.user, data.token)
-      toast.success(`Kitobxonaga xush kelibsiz, ${data.user.name}!`)
+      toast.success(`EllikqalaBooks ga xush kelibsiz, ${data.user.name}!`)
       navigate('/')
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
@@ -51,7 +51,7 @@ export default function RegisterPage() {
     >
       <div>
         <h1 className="text-2xl font-bold">Hisob yaratish</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Kitobxonaga qo'shiling va bugundan o'qishni boshlang</p>
+        <p className="text-muted-foreground mt-1 text-sm">EllikqalaBooks ga qo'shiling va bugundan o'qishni boshlang</p>
       </div>
 
       <form

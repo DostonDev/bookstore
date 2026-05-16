@@ -77,7 +77,9 @@ export function SearchModal() {
                   <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                 </button>
               )}
-              <kbd className="text-xs text-muted-foreground bg-muted border border-border rounded px-1.5 py-0.5">ESC</kbd>
+              <button onClick={() => setSearchOpen(false)} className="p-1 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             <div className="max-h-80 overflow-y-auto">
