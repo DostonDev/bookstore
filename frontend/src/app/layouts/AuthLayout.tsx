@@ -62,7 +62,7 @@ export function AuthLayout() {
             </motion.div>
           </div>
 
-          <p className="text-slate-600 text-sm">© 2024 EllikqalaBooks. Barcha huquqlar himoyalangan.</p>
+          <p className="text-slate-600 text-sm">© 2026 EllikqalaBooks. Barcha huquqlar himoyalangan.</p>
         </div>
       </div>
 

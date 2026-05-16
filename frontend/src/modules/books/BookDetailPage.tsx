@@ -95,7 +95,7 @@ export default function BookDetailPage() {
                 </span>
               </div>
 
-              {isAuthenticated && (
+              {book.pdfUrl && (
                 <Link to={`/read/${book.id}`}
                   className="mt-3 flex items-center gap-1.5 text-xs text-amber-400 font-medium">
                   <BookMarked className="w-3.5 h-3.5" /> O'qishni davom ettirish
@@ -106,20 +106,20 @@ export default function BookDetailPage() {
 
           {/* Action buttons */}
           <div className="mt-4 lg:mt-4 space-y-2.5 lg:sticky lg:top-24">
-            <div className="flex flex-col sm:flex-row lg:flex-col gap-2">
-              <button onClick={() => isAuthenticated ? download.mutate(book.id) : undefined}
-                disabled={download.isPending || !isAuthenticated}
-                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white rounded-xl py-3 font-medium text-sm transition-colors">
-                {download.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {!isAuthenticated ? 'Kirish kerak' : 'Yuklab olish'}
-              </button>
-              {isAuthenticated && (
+            {book.pdfUrl && (
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-2">
+                <button onClick={() => download.mutate(book.id)}
+                  disabled={download.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white rounded-xl py-3 font-medium text-sm transition-colors">
+                  {download.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Yuklab olish
+                </button>
                 <Link to={`/read/${book.id}`}
                   className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl py-3 font-medium text-sm transition-colors">
                   <BookMarked className="w-4 h-4" /> O'qish
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="flex gap-2">
               <button onClick={() => isAuthenticated && toggleLike.mutate(book.id)}
