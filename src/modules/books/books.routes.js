@@ -11,6 +11,8 @@ router.get("/:id/related", ctrl.getRelated);
 router.get("/:id/download", authenticate, ctrl.download);
 router.get("/:id", optionalAuth, ctrl.getById);
 
+router.post("/upload-url", authenticate, requireAdmin, ctrl.getUploadUrl);
+
 router.post("/", authenticate, requireAdmin,
   uploadBookFiles.fields([{ name: "pdf", maxCount: 1 }, { name: "cover", maxCount: 1 }]),
   ctrl.create

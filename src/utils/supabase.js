@@ -34,4 +34,15 @@ async function createSignedUrl(filePath, expiresIn = 60) {
   return data.signedUrl;
 }
 
-module.exports = { supabase, uploadFile, deleteFile, createSignedUrl, BUCKET };
+async function getSignedUploadUrl(folder, filename) {
+  const ext = filename.split(".").pop();
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path);
+  if (error) throw new Error(`Signed upload URL xatosi: ${error.message}`);
+
+  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return { signedUrl: data.signedUrl, path, publicUrl: urlData.publicUrl };
+}
+
+module.exports = { supabase, uploadFile, deleteFile, createSignedUrl, getSignedUploadUrl, BUCKET };

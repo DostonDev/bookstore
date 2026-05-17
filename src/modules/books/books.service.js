@@ -47,11 +47,16 @@ const getPopular = async (limit = 10, userId) => {
   return books.map(formatBook);
 };
 
-const create = async ({ title, description, price, categoryId, authorId, tags }, pdfFile, coverFile) => {
-  if (!pdfFile) throw { status: 400, message: "PDF fayl yuklanmagan." };
+const create = async ({ title, description, price, categoryId, authorId, tags, pdfUrl: pdfUrlInput, coverUrl: coverUrlInput }, pdfFile, coverFile) => {
+  let pdfUrl = pdfUrlInput || null;
+  let coverUrl = coverUrlInput || null;
 
-  const { url: pdfUrl } = await uploadFile(pdfFile.buffer, pdfFile.originalname, "pdfs");
-  let coverUrl = null;
+  if (pdfFile) {
+    const { url } = await uploadFile(pdfFile.buffer, pdfFile.originalname, "pdfs");
+    pdfUrl = url;
+  }
+  if (!pdfUrl) throw { status: 400, message: "PDF fayl yuklanmagan." };
+
   if (coverFile) {
     const { url } = await uploadFile(coverFile.buffer, coverFile.originalname, "covers");
     coverUrl = url;
@@ -88,10 +93,12 @@ const update = async (id, body, pdfFile, coverFile) => {
   if (body.authorId !== undefined) data.authorId = body.authorId || null;
 
   if (pdfFile) {
-    const oldPath = existing.pdfUrl.split(`/${process.env.SUPABASE_BUCKET_NAME}/`)[1];
+    const oldPath = existing.pdfUrl?.split(`/${process.env.SUPABASE_BUCKET_NAME}/`)[1];
     if (oldPath) await deleteFile(oldPath).catch(() => {});
     const { url } = await uploadFile(pdfFile.buffer, pdfFile.originalname, "pdfs");
     data.pdfUrl = url;
+  } else if (body.pdfUrl) {
+    data.pdfUrl = body.pdfUrl;
   }
 
   if (coverFile) {
@@ -101,6 +108,8 @@ const update = async (id, body, pdfFile, coverFile) => {
     }
     const { url } = await uploadFile(coverFile.buffer, coverFile.originalname, "covers");
     data.coverUrl = url;
+  } else if (body.coverUrl) {
+    data.coverUrl = body.coverUrl;
   }
 
   const book = await repo.update(id, data);

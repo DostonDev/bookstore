@@ -1,4 +1,5 @@
 const service = require("./books.service");
+const { getSignedUploadUrl } = require("../../utils/supabase");
 const { success, error, paginated } = require("../../utils/response");
 
 const getAll = async (req, res) => {
@@ -86,4 +87,16 @@ const download = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, getNew, getPopular, getRelated, create, update, remove, download };
+const getUploadUrl = async (req, res) => {
+  try {
+    const { folder, filename } = req.body;
+    if (!folder || !filename) return error(res, "folder va filename majburiy.", 400);
+    if (!["pdfs", "covers"].includes(folder)) return error(res, "Noto'g'ri folder.", 400);
+    const data = await getSignedUploadUrl(folder, filename);
+    return success(res, data);
+  } catch (err) {
+    return error(res, err.message, 500);
+  }
+};
+
+module.exports = { getAll, getById, getNew, getPopular, getRelated, create, update, remove, download, getUploadUrl };

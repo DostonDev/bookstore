@@ -6,6 +6,9 @@ import { useCategories } from '@/hooks/useCategories'
 import { useAuthors } from '@/hooks/useAuthors'
 import { formatPrice, formatNumber, formatDate, truncate } from '@/lib/utils'
 import { useDebounce } from '@/hooks/useDebounce'
+import { booksService } from '@/services/books.service'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import type { Book } from '@/types'
 
 function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) {
@@ -28,7 +31,6 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
     ((authorsData as { data?: { id: string; name: string }[] })?.data) || []
   const isLoading = createBook.isPending || updateBook.isPending
 
-  // flat category list (root + children)
   const allCategories: { id: string; name: string }[] = []
   for (const c of categoriesData) {
     allCategories.push({ id: c.id, name: c.name })
@@ -45,6 +47,11 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
       setCoverFile(file)
       setCoverPreview(URL.createObjectURL(file))
     }
+  }
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/^0+(\d)/, '$1')
+    setPrice(raw === '' ? '0' : raw)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -114,7 +121,9 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
               <div>
                 <label className="block text-sm font-medium mb-1.5">Narx (so'm)</label>
                 <input
-                  value={price} onChange={(e) => setPrice(e.target.value)}
+                  value={price}
+                  onChange={handlePriceChange}
+                  onFocus={(e) => e.target.select()}
                   type="number" min="0" step="1" placeholder="0"
                   className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                 />
@@ -198,13 +207,59 @@ export default function AdminBooksPage() {
   const [showForm, setShowForm] = useState(false)
   const [editBook, setEditBook] = useState<Book | undefined>()
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const debouncedSearch = useDebounce(search, 400)
 
   const { data, isLoading } = useBooks({ page, limit: 10, search: debouncedSearch || undefined })
   const deleteBook = useDeleteBook()
+  const qc = useQueryClient()
 
   const books = data?.books || []
   const pagination = data?.pagination
+
+  const allPageSelected = books.length > 0 && books.every(b => selectedIds.has(b.id))
+  const someSelected = selectedIds.size > 0
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (allPageSelected) {
+      setSelectedIds(prev => {
+        const next = new Set(prev)
+        books.forEach(b => next.delete(b.id))
+        return next
+      })
+    } else {
+      setSelectedIds(prev => {
+        const next = new Set(prev)
+        books.forEach(b => next.add(b.id))
+        return next
+      })
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true)
+    try {
+      await Promise.all([...selectedIds].map(id => booksService.deleteBook(id)))
+      qc.invalidateQueries({ queryKey: ['books'] })
+      toast.success(`${selectedIds.size} ta kitob o'chirildi`)
+      setSelectedIds(new Set())
+      setShowBulkDeleteConfirm(false)
+    } catch {
+      toast.error("O'chirishda xato yuz berdi")
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -213,13 +268,24 @@ export default function AdminBooksPage() {
           <h1 className="text-2xl font-bold">Kitoblar</h1>
           <p className="text-muted-foreground text-sm mt-1">Jami {pagination?.total || 0} ta kitob</p>
         </div>
-        <button
-          onClick={() => { setEditBook(undefined); setShowForm(true) }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Kitob qo'shish
-        </button>
+        <div className="flex items-center gap-2">
+          {someSelected && (
+            <button
+              onClick={() => setShowBulkDeleteConfirm(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              O'chirish ({selectedIds.size})
+            </button>
+          )}
+          <button
+            onClick={() => { setEditBook(undefined); setShowForm(true) }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Kitob qo'shish
+          </button>
+        </div>
       </div>
 
       <div className="relative">
@@ -236,24 +302,44 @@ export default function AdminBooksPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
+                <th className="px-4 py-3 pl-6 w-10">
+                  <input
+                    type="checkbox"
+                    checked={allPageSelected}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
+                  />
+                </th>
                 {['Kitob', 'Narx', 'Reyting', 'Yuklamalar', 'Yoqtirishlar', 'Qo\'shilgan', 'Amallar'].map((h) => (
-                  <th key={h} className="text-left text-xs font-medium text-muted-foreground px-4 py-3 first:pl-6">{h}</th>
+                  <th key={h} className="text-left text-xs font-medium text-muted-foreground px-4 py-3">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>{Array.from({ length: 7 }).map((__, j) => (
+                  <tr key={i}>{Array.from({ length: 8 }).map((__, j) => (
                     <td key={j} className="px-4 py-4 first:pl-6"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                   ))}</tr>
                 ))
               ) : books.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-muted-foreground text-sm">Kitob topilmadi</td></tr>
+                <tr><td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">Kitob topilmadi</td></tr>
               ) : (
                 books.map((book) => (
-                  <motion.tr key={book.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-muted/20 transition-colors">
+                  <motion.tr
+                    key={book.id}
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className={`hover:bg-muted/20 transition-colors ${selectedIds.has(book.id) ? 'bg-amber-500/5' : ''}`}
+                  >
                     <td className="px-4 py-4 pl-6">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(book.id)}
+                        onChange={() => toggleSelect(book.id)}
+                        className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-14 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 shrink-0 flex items-center justify-center overflow-hidden">
                           {book.coverUrl ? (
@@ -319,7 +405,7 @@ export default function AdminBooksPage() {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteId(null)} />
             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-2xl">
               <h3 className="font-bold mb-2">Kitobni o'chirishni tasdiqlaysizmi?</h3>
-              <p className="text-sm text-muted-foreground mb-6">Bu amalni ortga qaytarib bo'lmaydi. Kitob va barcha bog'liq ma'lumotlar o'chib ketadi.</p>
+              <p className="text-sm text-muted-foreground mb-6">Bu amalni ortga qaytarib bo'lmaydi.</p>
               <div className="flex gap-3">
                 <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 rounded-xl border border-border text-sm hover:bg-accent transition-colors">Bekor qilish</button>
                 <button
@@ -328,6 +414,32 @@ export default function AdminBooksPage() {
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm disabled:opacity-60 transition-colors"
                 >
                   {deleteBook.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "O'chirish"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showBulkDeleteConfirm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isBulkDeleting && setShowBulkDeleteConfirm(false)} />
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-2xl">
+              <h3 className="font-bold mb-2">{selectedIds.size} ta kitobni o'chirishni tasdiqlaysizmi?</h3>
+              <p className="text-sm text-muted-foreground mb-6">Bu amalni ortga qaytarib bo'lmaydi. Tanlangan barcha kitoblar o'chib ketadi.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBulkDeleteConfirm(false)}
+                  disabled={isBulkDeleting}
+                  className="flex-1 py-2.5 rounded-xl border border-border text-sm hover:bg-accent transition-colors disabled:opacity-60"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={isBulkDeleting}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm disabled:opacity-60 transition-colors"
+                >
+                  {isBulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : `${selectedIds.size} tasini o'chirish`}
                 </button>
               </div>
             </motion.div>
