@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, Edit, Trash2, BookOpen, X, Loader2, Upload, ImageIcon, FileText, Star, Heart, UserCheck, Tag } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, BookOpen, X, Loader2, Upload, ImageIcon, FileText, Star, Heart } from 'lucide-react'
 import { useBooks, useCreateBook, useDeleteBook, useUpdateBook } from '@/hooks/useBooks'
 import { useCategories } from '@/hooks/useCategories'
 import { useAuthors } from '@/hooks/useAuthors'
@@ -9,7 +9,6 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { booksService } from '@/services/books.service'
 import { authorsService } from '@/services/authors.service'
 import { categoriesService } from '@/services/categories.service'
-import api from '@/services/api'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Book } from '@/types'
@@ -271,22 +270,9 @@ export default function AdminBooksPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
-  const [showBulkAuthor, setShowBulkAuthor] = useState(false)
-  const [bulkAuthorId, setBulkAuthorId] = useState('')
-  const [isBulkAssigning, setIsBulkAssigning] = useState(false)
-  const [showBulkCategory, setShowBulkCategory] = useState(false)
-  const [bulkCategoryId, setBulkCategoryId] = useState('')
-  const [isBulkAssigningCategory, setIsBulkAssigningCategory] = useState(false)
   const debouncedSearch = useDebounce(search, 400)
 
   const { data, isLoading } = useBooks({ page, limit: 10, search: debouncedSearch || undefined })
-  const { data: authorsData } = useAuthors({ limit: 200 })
-  const authorsList: { id: string; name: string }[] =
-    ((authorsData as { data?: { id: string; name: string }[] })?.data) || []
-  const { data: categoriesData = [] } = useCategories()
-  const categoriesList: { id: string; name: string }[] = categoriesData.flatMap(c =>
-    [{ id: c.id, name: c.name }, ...(c.children?.map(ch => ({ id: ch.id, name: `${c.name} › ${ch.name}` })) ?? [])]
-  )
   const deleteBook = useDeleteBook()
   const qc = useQueryClient()
 
@@ -320,62 +306,6 @@ export default function AdminBooksPage() {
     }
   }
 
-  const handleQuickAssignCategory = async (bookId: string, catId: string) => {
-    try {
-      await api.put(`/books/${bookId}`, { categoryId: catId || null })
-      qc.invalidateQueries({ queryKey: ['books'] })
-      toast.success(catId ? 'Kategoriya biriktirildi' : 'Kategoriya olib tashlandi')
-    } catch {
-      toast.error('Xato yuz berdi')
-    }
-  }
-
-  const handleBulkAssignCategory = async () => {
-    setIsBulkAssigningCategory(true)
-    try {
-      await Promise.all([...selectedIds].map(id =>
-        api.put(`/books/${id}`, { categoryId: bulkCategoryId || null })
-      ))
-      qc.invalidateQueries({ queryKey: ['books'] })
-      toast.success(`${selectedIds.size} ta kitobga kategoriya biriktirildi`)
-      setSelectedIds(new Set())
-      setShowBulkCategory(false)
-      setBulkCategoryId('')
-    } catch {
-      toast.error('Xato yuz berdi')
-    } finally {
-      setIsBulkAssigningCategory(false)
-    }
-  }
-
-  const handleQuickAssignAuthor = async (bookId: string, authorId: string) => {
-    try {
-      await api.put(`/books/${bookId}`, { authorId: authorId || null })
-      qc.invalidateQueries({ queryKey: ['books'] })
-      toast.success(authorId ? 'Muallif biriktirildi' : 'Muallif olib tashlandi')
-    } catch {
-      toast.error('Xato yuz berdi')
-    }
-  }
-
-  const handleBulkAssignAuthor = async () => {
-    setIsBulkAssigning(true)
-    try {
-      await Promise.all([...selectedIds].map(id =>
-        api.put(`/books/${id}`, { authorId: bulkAuthorId || null })
-      ))
-      qc.invalidateQueries({ queryKey: ['books'] })
-      toast.success(`${selectedIds.size} ta kitobga muallif biriktirildi`)
-      setSelectedIds(new Set())
-      setShowBulkAuthor(false)
-      setBulkAuthorId('')
-    } catch {
-      toast.error('Xato yuz berdi')
-    } finally {
-      setIsBulkAssigning(false)
-    }
-  }
-
   const handleBulkDelete = async () => {
     setIsBulkDeleting(true)
     try {
@@ -400,29 +330,13 @@ export default function AdminBooksPage() {
         </div>
         <div className="flex items-center gap-2">
           {someSelected && (
-            <>
-              <button
-                onClick={() => setShowBulkCategory(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-400 text-sm font-medium transition-colors"
-              >
-                <Tag className="w-4 h-4" />
-                Kategoriya ({selectedIds.size})
-              </button>
-              <button
-                onClick={() => setShowBulkAuthor(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-400 text-sm font-medium transition-colors"
-              >
-                <UserCheck className="w-4 h-4" />
-                Muallif ({selectedIds.size})
-              </button>
-              <button
-                onClick={() => setShowBulkDeleteConfirm(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                O'chirish ({selectedIds.size})
-              </button>
-            </>
+            <button
+              onClick={() => setShowBulkDeleteConfirm(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              O'chirish ({selectedIds.size})
+            </button>
           )}
           <button
             onClick={() => { setEditBook(undefined); setShowForm(true) }}
@@ -456,7 +370,7 @@ export default function AdminBooksPage() {
                     className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
                   />
                 </th>
-                {['Kitob', 'Kategoriya', 'Muallif', 'Narx', 'Reyting', 'Yuklamalar', 'Yoqtirishlar', 'Qo\'shilgan', 'Amallar'].map((h) => (
+                {['Kitob', 'Narx', 'Reyting', 'Yuklamalar', 'Yoqtirishlar', 'Qo\'shilgan', 'Amallar'].map((h) => (
                   <th key={h} className="text-left text-xs font-medium text-muted-foreground px-4 py-3">{h}</th>
                 ))}
               </tr>
@@ -464,12 +378,12 @@ export default function AdminBooksPage() {
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>{Array.from({ length: 10 }).map((__, j) => (
+                  <tr key={i}>{Array.from({ length: 8 }).map((__, j) => (
                     <td key={j} className="px-4 py-4 first:pl-6"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                   ))}</tr>
                 ))
               ) : books.length === 0 ? (
-                <tr><td colSpan={10} className="text-center py-12 text-muted-foreground text-sm">Kitob topilmadi</td></tr>
+                <tr><td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">Kitob topilmadi</td></tr>
               ) : (
                 books.map((book) => (
                   <motion.tr
@@ -499,26 +413,6 @@ export default function AdminBooksPage() {
                           {book.description && <p className="text-xs text-muted-foreground">{truncate(book.description, 40)}</p>}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <select
-                        value={book.category?.id || ''}
-                        onChange={e => handleQuickAssignCategory(book.id, e.target.value)}
-                        className="bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500/50 max-w-[140px] appearance-none"
-                      >
-                        <option value="">— Yo'q —</option>
-                        {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-4 py-4">
-                      <select
-                        value={book.author?.id || ''}
-                        onChange={e => handleQuickAssignAuthor(book.id, e.target.value)}
-                        className="bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500/50 max-w-[140px] appearance-none"
-                      >
-                        <option value="">— Yo'q —</option>
-                        {authorsList.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                      </select>
                     </td>
                     <td className="px-4 py-4 text-sm">{formatPrice(book.price)}</td>
                     <td className="px-4 py-4 text-sm">
@@ -565,78 +459,6 @@ export default function AdminBooksPage() {
 
       <AnimatePresence>
         {showForm && <BookFormModal book={editBook} onClose={() => { setShowForm(false); setEditBook(undefined) }} />}
-
-        {showBulkCategory && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isBulkAssigningCategory && setShowBulkCategory(false)} />
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-2xl">
-              <h3 className="font-bold mb-1">Kategoriya biriktirish</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {selectedIds.size} ta tanlangan kitobga kategoriya belgilang
-              </p>
-              <select
-                value={bulkCategoryId}
-                onChange={e => setBulkCategoryId(e.target.value)}
-                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 appearance-none mb-5"
-              >
-                <option value="">— Kategoriyasiz (tozalash) —</option>
-                {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowBulkCategory(false)}
-                  disabled={isBulkAssigningCategory}
-                  className="flex-1 py-2.5 rounded-xl border border-border text-sm hover:bg-accent transition-colors disabled:opacity-60"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  onClick={handleBulkAssignCategory}
-                  disabled={isBulkAssigningCategory}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm disabled:opacity-60 transition-colors"
-                >
-                  {isBulkAssigningCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Biriktirish'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {showBulkAuthor && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isBulkAssigning && setShowBulkAuthor(false)} />
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-2xl">
-              <h3 className="font-bold mb-1">Muallif biriktirish</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {selectedIds.size} ta tanlangan kitobga muallif belgilang
-              </p>
-              <select
-                value={bulkAuthorId}
-                onChange={e => setBulkAuthorId(e.target.value)}
-                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none mb-5"
-              >
-                <option value="">— Muallifsiz (tozalash) —</option>
-                {authorsList.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowBulkAuthor(false)}
-                  disabled={isBulkAssigning}
-                  className="flex-1 py-2.5 rounded-xl border border-border text-sm hover:bg-accent transition-colors disabled:opacity-60"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  onClick={handleBulkAssignAuthor}
-                  disabled={isBulkAssigning}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm disabled:opacity-60 transition-colors"
-                >
-                  {isBulkAssigning ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Biriktirish'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
 
         {deleteId && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
