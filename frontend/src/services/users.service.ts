@@ -31,6 +31,10 @@ export const usersService = {
     return res.data.data
   },
 
+  async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
+    await api.patch('/users/profile/password', data)
+  },
+
   async getAllUsers(params?: { page?: number; limit?: number; search?: string }): Promise<{
     users: User[]
     pagination: { total: number; page: number; limit: number; totalPages: number }

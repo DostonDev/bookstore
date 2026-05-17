@@ -41,6 +41,12 @@ export const useUploadAvatar = () => {
   })
 }
 
+export const useChangePassword = () =>
+  useMutation({
+    mutationFn: (data: { currentPassword: string; newPassword: string }) =>
+      usersService.changePassword(data),
+  })
+
 export const useAllUsers = (params?: { page?: number; limit?: number; search?: string }) =>
   useQuery({
     queryKey: [QUERY_KEYS.allUsers, params],

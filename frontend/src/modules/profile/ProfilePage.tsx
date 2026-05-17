@@ -1,7 +1,7 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BookOpen, Download, Bookmark, MessageSquare, Heart, Camera, Loader2 } from 'lucide-react'
-import { useProfile, useUploadAvatar } from '@/hooks/useUsers'
+import { BookOpen, Download, Bookmark, MessageSquare, Heart, Camera, Loader2, Lock, Eye, EyeOff } from 'lucide-react'
+import { useProfile, useUploadAvatar, useChangePassword } from '@/hooks/useUsers'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatDate, getInitials } from '@/lib/utils'
 import { Link } from 'react-router-dom'
@@ -19,7 +19,12 @@ export default function ProfilePage() {
   const { user: authUser } = useAuthStore()
   const { data, isLoading } = useProfile()
   const { mutate: uploadAvatar, isPending } = useUploadAvatar()
+  const changePassword = useChangePassword()
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [showCurrent, setShowCurrent] = useState(false)
+  const [showNew, setShowNew] = useState(false)
 
   if (isLoading) return <PageLoader />
 
@@ -37,6 +42,27 @@ export default function ProfilePage() {
       onError: () => toast.error('Xatolik yuz berdi'),
     })
     e.target.value = ''
+  }
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      toast.error('Yangi parollar mos kelmaydi')
+      return
+    }
+    changePassword.mutate(
+      { currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword },
+      {
+        onSuccess: () => {
+          toast.success("Parol muvaffaqiyatli o'zgartirildi")
+          setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        },
+        onError: (err: unknown) => {
+          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+          toast.error(msg || "Parolni o'zgartirishda xato")
+        },
+      }
+    )
   }
 
   return (
@@ -117,6 +143,62 @@ export default function ProfilePage() {
               </motion.div>
             </Link>
           ))}
+        </div>
+
+        {/* Change password */}
+        <div className="rounded-2xl border border-border/50 bg-card p-6 mb-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+              <Lock className="w-4 h-4 text-amber-400" />
+            </div>
+            <h2 className="font-semibold">Parolni o'zgartirish</h2>
+          </div>
+          <form onSubmit={handleChangePassword} className="space-y-3 max-w-md">
+            <div className="relative">
+              <input
+                type={showCurrent ? 'text' : 'password'}
+                placeholder="Eski parol"
+                value={pwForm.currentPassword}
+                onChange={e => setPwForm(f => ({ ...f, currentPassword: e.target.value }))}
+                required
+                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              />
+              <button type="button" onClick={() => setShowCurrent(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showNew ? 'text' : 'password'}
+                placeholder="Yangi parol (kamida 6 ta belgi)"
+                value={pwForm.newPassword}
+                onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
+                required
+                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              />
+              <button type="button" onClick={() => setShowNew(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <input
+              type="password"
+              placeholder="Yangi parolni tasdiqlang"
+              value={pwForm.confirmPassword}
+              onChange={e => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
+              required
+              className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+            />
+            <button
+              type="submit"
+              disabled={changePassword.isPending}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium disabled:opacity-60 transition-colors"
+            >
+              {changePassword.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+              Parolni o'zgartirish
+            </button>
+          </form>
         </div>
 
         {/* Quick actions */}

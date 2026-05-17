@@ -1,4 +1,5 @@
 const prisma = require("../../utils/prisma");
+const bcrypt = require("bcrypt");
 const { success, error } = require("../../utils/response");
 const { getPagination, buildMeta } = require("../../utils/pagination");
 const { uploadFile, deleteFile } = require("../../utils/supabase");
@@ -100,4 +101,24 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, uploadAvatar, getDownloadHistory, getAllUsers };
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword)
+      return error(res, "Eski va yangi parol majburiy.", 400);
+    if (newPassword.length < 6)
+      return error(res, "Yangi parol kamida 6 ta belgidan iborat bo'lishi kerak.", 400);
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) return error(res, "Eski parol noto'g'ri.", 400);
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { id: req.user.id }, data: { password: hashed } });
+    return success(res, null, "Parol muvaffaqiyatli o'zgartirildi.");
+  } catch (err) {
+    return error(res, "Parolni o'zgartirishda xato.");
+  }
+};
+
+module.exports = { getProfile, uploadAvatar, getDownloadHistory, getAllUsers, changePassword };

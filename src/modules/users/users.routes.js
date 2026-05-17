@@ -6,6 +6,7 @@ const { uploadImage } = require("../../utils/multer");
 
 router.get("/profile", authenticate, ctrl.getProfile);
 router.patch("/profile/avatar", authenticate, uploadImage.single("avatar"), ctrl.uploadAvatar);
+router.patch("/profile/password", authenticate, ctrl.changePassword);
 router.get("/downloads", authenticate, ctrl.getDownloadHistory);
 router.get("/", authenticate, requireAdmin, ctrl.getAllUsers);
 router.get("/all", authenticate, requireAdmin, ctrl.getAllUsers);
