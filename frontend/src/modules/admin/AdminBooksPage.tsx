@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, Edit, Trash2, BookOpen, X, Loader2, Upload, ImageIcon, FileText, Star, Heart } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, BookOpen, X, Loader2, Upload, ImageIcon, FileText, Star, Heart, UserCheck } from 'lucide-react'
 import { useBooks, useCreateBook, useDeleteBook, useUpdateBook } from '@/hooks/useBooks'
 import { useCategories } from '@/hooks/useCategories'
 import { useAuthors } from '@/hooks/useAuthors'
 import { formatPrice, formatNumber, formatDate, truncate } from '@/lib/utils'
 import { useDebounce } from '@/hooks/useDebounce'
 import { booksService } from '@/services/books.service'
+import { authorsService } from '@/services/authors.service'
+import api from '@/services/api'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Book } from '@/types'
@@ -15,8 +17,9 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
   const [title, setTitle] = useState(book?.title || '')
   const [description, setDescription] = useState(book?.description || '')
   const [price, setPrice] = useState(book?.price?.toString() || '0')
-  const [categoryName, setCategoryName] = useState(book?.category?.name || '')
+  const [categoryId, setCategoryId] = useState(book?.category?.id || '')
   const [authorName, setAuthorName] = useState(book?.author?.name || '')
+  const [isCreatingAuthor, setIsCreatingAuthor] = useState(false)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(book?.coverUrl || null)
@@ -29,7 +32,7 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
   const { data: authorsData } = useAuthors({ limit: 100 })
   const authors: { id: string; name: string }[] =
     ((authorsData as { data?: { id: string; name: string }[] })?.data) || []
-  const isLoading = createBook.isPending || updateBook.isPending
+  const isLoading = createBook.isPending || updateBook.isPending || isCreatingAuthor
 
   const allCategories: { id: string; name: string }[] = []
   for (const c of categoriesData) {
@@ -54,16 +57,39 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
     setPrice(raw === '' ? '0' : raw)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const formData = new FormData()
     formData.append('title', title)
     formData.append('description', description)
     formData.append('price', price)
-    const matchedCategory = allCategories.find(c => c.name.toLowerCase() === categoryName.toLowerCase())
-    if (matchedCategory) formData.append('categoryId', matchedCategory.id)
-    const matchedAuthor = authors.find(a => a.name.toLowerCase() === authorName.toLowerCase())
-    if (matchedAuthor) formData.append('authorId', matchedAuthor.id)
+    if (categoryId) formData.append('categoryId', categoryId)
+
+    if (authorName.trim()) {
+      const matched = authors.find(a => a.name.toLowerCase() === authorName.trim().toLowerCase())
+      if (matched) {
+        formData.append('authorId', matched.id)
+      } else {
+        setIsCreatingAuthor(true)
+        try {
+          const authorFormData = new FormData()
+          authorFormData.append('name', authorName.trim())
+          const res = await authorsService.create(authorFormData)
+          const newAuthor = (res.data as { data?: { id: string } }).data
+          if (newAuthor?.id) {
+            formData.append('authorId', newAuthor.id)
+            toast.success(`"${authorName.trim()}" muallif sifatida qo'shildi`)
+          }
+        } catch {
+          toast.error('Muallif yaratishda xato yuz berdi')
+          setIsCreatingAuthor(false)
+          return
+        } finally {
+          setIsCreatingAuthor(false)
+        }
+      }
+    }
+
     if (pdfFile) formData.append('pdf', pdfFile)
     if (coverFile) formData.append('cover', coverFile)
     if (book) updateBook.mutate(formData, { onSuccess: onClose })
@@ -149,16 +175,14 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">Kategoriya</label>
-              <input
-                list="categories-list"
-                value={categoryName}
-                onChange={e => setCategoryName(e.target.value)}
-                placeholder="Kategoriya nomi..."
-                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-              />
-              <datalist id="categories-list">
-                {allCategories.map(c => <option key={c.id} value={c.name} />)}
-              </datalist>
+              <select
+                value={categoryId}
+                onChange={e => setCategoryId(e.target.value)}
+                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none"
+              >
+                <option value="">— Kategoriya tanlanmagan —</option>
+                {allCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Muallif</label>
@@ -166,12 +190,17 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
                 list="authors-list"
                 value={authorName}
                 onChange={e => setAuthorName(e.target.value)}
-                placeholder="Muallif ismi..."
+                placeholder="Muallif ismi (yangi bo'lsa ham yozing)..."
                 className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               />
               <datalist id="authors-list">
                 {authors.map(a => <option key={a.id} value={a.name} />)}
               </datalist>
+              {authorName.trim() && !authors.find(a => a.name.toLowerCase() === authorName.trim().toLowerCase()) && (
+                <p className="text-[11px] text-amber-400 mt-1">
+                  Yangi muallif yaratiladi: "{authorName.trim()}"
+                </p>
+              )}
             </div>
           </div>
 
@@ -210,9 +239,15 @@ export default function AdminBooksPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const [showBulkAuthor, setShowBulkAuthor] = useState(false)
+  const [bulkAuthorId, setBulkAuthorId] = useState('')
+  const [isBulkAssigning, setIsBulkAssigning] = useState(false)
   const debouncedSearch = useDebounce(search, 400)
 
   const { data, isLoading } = useBooks({ page, limit: 10, search: debouncedSearch || undefined })
+  const { data: authorsData } = useAuthors({ limit: 200 })
+  const authorsList: { id: string; name: string }[] =
+    ((authorsData as { data?: { id: string; name: string }[] })?.data) || []
   const deleteBook = useDeleteBook()
   const qc = useQueryClient()
 
@@ -246,6 +281,34 @@ export default function AdminBooksPage() {
     }
   }
 
+  const handleQuickAssignAuthor = async (bookId: string, authorId: string) => {
+    try {
+      await api.put(`/books/${bookId}`, { authorId: authorId || null })
+      qc.invalidateQueries({ queryKey: ['books'] })
+      toast.success(authorId ? 'Muallif biriktirildi' : 'Muallif olib tashlandi')
+    } catch {
+      toast.error('Xato yuz berdi')
+    }
+  }
+
+  const handleBulkAssignAuthor = async () => {
+    setIsBulkAssigning(true)
+    try {
+      await Promise.all([...selectedIds].map(id =>
+        api.put(`/books/${id}`, { authorId: bulkAuthorId || null })
+      ))
+      qc.invalidateQueries({ queryKey: ['books'] })
+      toast.success(`${selectedIds.size} ta kitobga muallif biriktirildi`)
+      setSelectedIds(new Set())
+      setShowBulkAuthor(false)
+      setBulkAuthorId('')
+    } catch {
+      toast.error('Xato yuz berdi')
+    } finally {
+      setIsBulkAssigning(false)
+    }
+  }
+
   const handleBulkDelete = async () => {
     setIsBulkDeleting(true)
     try {
@@ -270,13 +333,22 @@ export default function AdminBooksPage() {
         </div>
         <div className="flex items-center gap-2">
           {someSelected && (
-            <button
-              onClick={() => setShowBulkDeleteConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              O'chirish ({selectedIds.size})
-            </button>
+            <>
+              <button
+                onClick={() => setShowBulkAuthor(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-400 text-sm font-medium transition-colors"
+              >
+                <UserCheck className="w-4 h-4" />
+                Muallif biriktir ({selectedIds.size})
+              </button>
+              <button
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                O'chirish ({selectedIds.size})
+              </button>
+            </>
           )}
           <button
             onClick={() => { setEditBook(undefined); setShowForm(true) }}
@@ -310,7 +382,7 @@ export default function AdminBooksPage() {
                     className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
                   />
                 </th>
-                {['Kitob', 'Narx', 'Reyting', 'Yuklamalar', 'Yoqtirishlar', 'Qo\'shilgan', 'Amallar'].map((h) => (
+                {['Kitob', 'Muallif', 'Narx', 'Reyting', 'Yuklamalar', 'Yoqtirishlar', 'Qo\'shilgan', 'Amallar'].map((h) => (
                   <th key={h} className="text-left text-xs font-medium text-muted-foreground px-4 py-3">{h}</th>
                 ))}
               </tr>
@@ -318,12 +390,12 @@ export default function AdminBooksPage() {
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>{Array.from({ length: 8 }).map((__, j) => (
+                  <tr key={i}>{Array.from({ length: 9 }).map((__, j) => (
                     <td key={j} className="px-4 py-4 first:pl-6"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                   ))}</tr>
                 ))
               ) : books.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">Kitob topilmadi</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">Kitob topilmadi</td></tr>
               ) : (
                 books.map((book) => (
                   <motion.tr
@@ -353,6 +425,16 @@ export default function AdminBooksPage() {
                           {book.description && <p className="text-xs text-muted-foreground">{truncate(book.description, 40)}</p>}
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <select
+                        value={book.author?.id || ''}
+                        onChange={e => handleQuickAssignAuthor(book.id, e.target.value)}
+                        className="bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500/50 max-w-[140px] appearance-none"
+                      >
+                        <option value="">— Yo'q —</option>
+                        {authorsList.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select>
                     </td>
                     <td className="px-4 py-4 text-sm">{formatPrice(book.price)}</td>
                     <td className="px-4 py-4 text-sm">
@@ -399,6 +481,42 @@ export default function AdminBooksPage() {
 
       <AnimatePresence>
         {showForm && <BookFormModal book={editBook} onClose={() => { setShowForm(false); setEditBook(undefined) }} />}
+
+        {showBulkAuthor && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isBulkAssigning && setShowBulkAuthor(false)} />
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-2xl">
+              <h3 className="font-bold mb-1">Muallif biriktirish</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {selectedIds.size} ta tanlangan kitobga muallif belgilang
+              </p>
+              <select
+                value={bulkAuthorId}
+                onChange={e => setBulkAuthorId(e.target.value)}
+                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none mb-5"
+              >
+                <option value="">— Muallifsiz (tozalash) —</option>
+                {authorsList.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBulkAuthor(false)}
+                  disabled={isBulkAssigning}
+                  className="flex-1 py-2.5 rounded-xl border border-border text-sm hover:bg-accent transition-colors disabled:opacity-60"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  onClick={handleBulkAssignAuthor}
+                  disabled={isBulkAssigning}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm disabled:opacity-60 transition-colors"
+                >
+                  {isBulkAssigning ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Biriktirish'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
         {deleteId && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
