@@ -1,5 +1,5 @@
 const prisma = require("../../utils/prisma");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { success, error } = require("../../utils/response");
 const { getPagination, buildMeta } = require("../../utils/pagination");
 const { uploadFile, deleteFile } = require("../../utils/supabase");
