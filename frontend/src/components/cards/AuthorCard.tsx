@@ -59,11 +59,8 @@ export function AuthorCard({ author, index = 0 }: Props) {
                 )}
             </div>
             <div className="pb-1 flex-1 min-w-0">
-              <h3 className="font-semibold text-sm truncate group-hover:text-amber-400 transition-colors leading-snug">{author.name}</h3>
-              {author.bio
-                ? <p className="text-[11px] text-muted-foreground truncate mt-0.5">{author.bio}</p>
-                : <p className="text-[11px] text-muted-foreground mt-0.5">{author._count?.books ?? 0} ta kitob</p>
-              }
+              <h3 className="font-semibold text-sm line-clamp-2 group-hover:text-amber-400 transition-colors leading-snug">{author.name}</h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{author._count?.books ?? 0} ta kitob</p>
             </div>
           </div>
 
