@@ -33,6 +33,7 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
   const { data: authorsData } = useAuthors({ limit: 100 })
   const authors: { id: string; name: string }[] =
     ((authorsData as { data?: { id: string; name: string }[] })?.data) || []
+  const qc = useQueryClient()
   const isLoading = createBook.isPending || updateBook.isPending || isCreatingAuthor || isCreatingCategory
 
   const allCategories: { id: string; name: string }[] = []
@@ -78,6 +79,7 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
           if (newCat?.id) {
             formData.append('categoryId', newCat.id)
             toast.success(`"${categoryName.trim()}" kategoriya sifatida qo'shildi`)
+            qc.invalidateQueries({ queryKey: ['categories'] })
           }
         } catch {
           toast.error('Kategoriya yaratishda xato yuz berdi')
@@ -103,6 +105,7 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
           if (newAuthor?.id) {
             formData.append('authorId', newAuthor.id)
             toast.success(`"${authorName.trim()}" muallif sifatida qo'shildi`)
+            qc.invalidateQueries({ queryKey: ['authors'] })
           }
         } catch {
           toast.error('Muallif yaratishda xato yuz berdi')
