@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, Edit, Trash2, BookOpen, X, Loader2, Upload, ImageIcon, FileText, Star, Heart, UserCheck } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, BookOpen, X, Loader2, Upload, ImageIcon, FileText, Star, Heart, UserCheck, Tag } from 'lucide-react'
 import { useBooks, useCreateBook, useDeleteBook, useUpdateBook } from '@/hooks/useBooks'
 import { useCategories } from '@/hooks/useCategories'
 import { useAuthors } from '@/hooks/useAuthors'
@@ -8,6 +8,7 @@ import { formatPrice, formatNumber, formatDate, truncate } from '@/lib/utils'
 import { useDebounce } from '@/hooks/useDebounce'
 import { booksService } from '@/services/books.service'
 import { authorsService } from '@/services/authors.service'
+import { categoriesService } from '@/services/categories.service'
 import api from '@/services/api'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -17,9 +18,10 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
   const [title, setTitle] = useState(book?.title || '')
   const [description, setDescription] = useState(book?.description || '')
   const [price, setPrice] = useState(book?.price?.toString() || '0')
-  const [categoryId, setCategoryId] = useState(book?.category?.id || '')
+  const [categoryName, setCategoryName] = useState(book?.category?.name || '')
   const [authorName, setAuthorName] = useState(book?.author?.name || '')
   const [isCreatingAuthor, setIsCreatingAuthor] = useState(false)
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(book?.coverUrl || null)
@@ -32,7 +34,7 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
   const { data: authorsData } = useAuthors({ limit: 100 })
   const authors: { id: string; name: string }[] =
     ((authorsData as { data?: { id: string; name: string }[] })?.data) || []
-  const isLoading = createBook.isPending || updateBook.isPending || isCreatingAuthor
+  const isLoading = createBook.isPending || updateBook.isPending || isCreatingAuthor || isCreatingCategory
 
   const allCategories: { id: string; name: string }[] = []
   for (const c of categoriesData) {
@@ -63,7 +65,30 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
     formData.append('title', title)
     formData.append('description', description)
     formData.append('price', price)
-    if (categoryId) formData.append('categoryId', categoryId)
+    if (categoryName.trim()) {
+      const matchedCat = allCategories.find(c => c.name.toLowerCase() === categoryName.trim().toLowerCase())
+      if (matchedCat) {
+        formData.append('categoryId', matchedCat.id)
+      } else {
+        setIsCreatingCategory(true)
+        try {
+          const catFormData = new FormData()
+          catFormData.append('name', categoryName.trim())
+          const res = await categoriesService.create(catFormData)
+          const newCat = (res.data as { data?: { id: string } }).data
+          if (newCat?.id) {
+            formData.append('categoryId', newCat.id)
+            toast.success(`"${categoryName.trim()}" kategoriya sifatida qo'shildi`)
+          }
+        } catch {
+          toast.error('Kategoriya yaratishda xato yuz berdi')
+          setIsCreatingCategory(false)
+          return
+        } finally {
+          setIsCreatingCategory(false)
+        }
+      }
+    }
 
     if (authorName.trim()) {
       const matched = authors.find(a => a.name.toLowerCase() === authorName.trim().toLowerCase())
@@ -175,14 +200,21 @@ function BookFormModal({ book, onClose }: { book?: Book; onClose: () => void }) 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">Kategoriya</label>
-              <select
-                value={categoryId}
-                onChange={e => setCategoryId(e.target.value)}
-                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none"
-              >
-                <option value="">— Kategoriya tanlanmagan —</option>
-                {allCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <input
+                list="categories-list"
+                value={categoryName}
+                onChange={e => setCategoryName(e.target.value)}
+                placeholder="Kategoriya nomi (yangi bo'lsa ham yozing)..."
+                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+              />
+              <datalist id="categories-list">
+                {allCategories.map(c => <option key={c.id} value={c.name} />)}
+              </datalist>
+              {categoryName.trim() && !allCategories.find(c => c.name.toLowerCase() === categoryName.trim().toLowerCase()) && (
+                <p className="text-[11px] text-amber-400 mt-1">
+                  Yangi kategoriya yaratiladi: "{categoryName.trim()}"
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Muallif</label>
@@ -242,12 +274,19 @@ export default function AdminBooksPage() {
   const [showBulkAuthor, setShowBulkAuthor] = useState(false)
   const [bulkAuthorId, setBulkAuthorId] = useState('')
   const [isBulkAssigning, setIsBulkAssigning] = useState(false)
+  const [showBulkCategory, setShowBulkCategory] = useState(false)
+  const [bulkCategoryId, setBulkCategoryId] = useState('')
+  const [isBulkAssigningCategory, setIsBulkAssigningCategory] = useState(false)
   const debouncedSearch = useDebounce(search, 400)
 
   const { data, isLoading } = useBooks({ page, limit: 10, search: debouncedSearch || undefined })
   const { data: authorsData } = useAuthors({ limit: 200 })
   const authorsList: { id: string; name: string }[] =
     ((authorsData as { data?: { id: string; name: string }[] })?.data) || []
+  const { data: categoriesData = [] } = useCategories()
+  const categoriesList: { id: string; name: string }[] = categoriesData.flatMap(c =>
+    [{ id: c.id, name: c.name }, ...(c.children?.map(ch => ({ id: ch.id, name: `${c.name} › ${ch.name}` })) ?? [])]
+  )
   const deleteBook = useDeleteBook()
   const qc = useQueryClient()
 
@@ -278,6 +317,34 @@ export default function AdminBooksPage() {
         books.forEach(b => next.add(b.id))
         return next
       })
+    }
+  }
+
+  const handleQuickAssignCategory = async (bookId: string, catId: string) => {
+    try {
+      await api.put(`/books/${bookId}`, { categoryId: catId || null })
+      qc.invalidateQueries({ queryKey: ['books'] })
+      toast.success(catId ? 'Kategoriya biriktirildi' : 'Kategoriya olib tashlandi')
+    } catch {
+      toast.error('Xato yuz berdi')
+    }
+  }
+
+  const handleBulkAssignCategory = async () => {
+    setIsBulkAssigningCategory(true)
+    try {
+      await Promise.all([...selectedIds].map(id =>
+        api.put(`/books/${id}`, { categoryId: bulkCategoryId || null })
+      ))
+      qc.invalidateQueries({ queryKey: ['books'] })
+      toast.success(`${selectedIds.size} ta kitobga kategoriya biriktirildi`)
+      setSelectedIds(new Set())
+      setShowBulkCategory(false)
+      setBulkCategoryId('')
+    } catch {
+      toast.error('Xato yuz berdi')
+    } finally {
+      setIsBulkAssigningCategory(false)
     }
   }
 
@@ -335,11 +402,18 @@ export default function AdminBooksPage() {
           {someSelected && (
             <>
               <button
+                onClick={() => setShowBulkCategory(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-400 text-sm font-medium transition-colors"
+              >
+                <Tag className="w-4 h-4" />
+                Kategoriya ({selectedIds.size})
+              </button>
+              <button
                 onClick={() => setShowBulkAuthor(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-400 text-sm font-medium transition-colors"
               >
                 <UserCheck className="w-4 h-4" />
-                Muallif biriktir ({selectedIds.size})
+                Muallif ({selectedIds.size})
               </button>
               <button
                 onClick={() => setShowBulkDeleteConfirm(true)}
@@ -382,7 +456,7 @@ export default function AdminBooksPage() {
                     className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
                   />
                 </th>
-                {['Kitob', 'Muallif', 'Narx', 'Reyting', 'Yuklamalar', 'Yoqtirishlar', 'Qo\'shilgan', 'Amallar'].map((h) => (
+                {['Kitob', 'Kategoriya', 'Muallif', 'Narx', 'Reyting', 'Yuklamalar', 'Yoqtirishlar', 'Qo\'shilgan', 'Amallar'].map((h) => (
                   <th key={h} className="text-left text-xs font-medium text-muted-foreground px-4 py-3">{h}</th>
                 ))}
               </tr>
@@ -390,12 +464,12 @@ export default function AdminBooksPage() {
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>{Array.from({ length: 9 }).map((__, j) => (
+                  <tr key={i}>{Array.from({ length: 10 }).map((__, j) => (
                     <td key={j} className="px-4 py-4 first:pl-6"><div className="h-4 bg-muted rounded animate-pulse" /></td>
                   ))}</tr>
                 ))
               ) : books.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">Kitob topilmadi</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-muted-foreground text-sm">Kitob topilmadi</td></tr>
               ) : (
                 books.map((book) => (
                   <motion.tr
@@ -425,6 +499,16 @@ export default function AdminBooksPage() {
                           {book.description && <p className="text-xs text-muted-foreground">{truncate(book.description, 40)}</p>}
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <select
+                        value={book.category?.id || ''}
+                        onChange={e => handleQuickAssignCategory(book.id, e.target.value)}
+                        className="bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500/50 max-w-[140px] appearance-none"
+                      >
+                        <option value="">— Yo'q —</option>
+                        {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
                     </td>
                     <td className="px-4 py-4">
                       <select
@@ -481,6 +565,42 @@ export default function AdminBooksPage() {
 
       <AnimatePresence>
         {showForm && <BookFormModal book={editBook} onClose={() => { setShowForm(false); setEditBook(undefined) }} />}
+
+        {showBulkCategory && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isBulkAssigningCategory && setShowBulkCategory(false)} />
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-2xl">
+              <h3 className="font-bold mb-1">Kategoriya biriktirish</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {selectedIds.size} ta tanlangan kitobga kategoriya belgilang
+              </p>
+              <select
+                value={bulkCategoryId}
+                onChange={e => setBulkCategoryId(e.target.value)}
+                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 appearance-none mb-5"
+              >
+                <option value="">— Kategoriyasiz (tozalash) —</option>
+                {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBulkCategory(false)}
+                  disabled={isBulkAssigningCategory}
+                  className="flex-1 py-2.5 rounded-xl border border-border text-sm hover:bg-accent transition-colors disabled:opacity-60"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  onClick={handleBulkAssignCategory}
+                  disabled={isBulkAssigningCategory}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm disabled:opacity-60 transition-colors"
+                >
+                  {isBulkAssigningCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Biriktirish'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
         {showBulkAuthor && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
