@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { Plus, Pencil, Trash2, Eye, EyeOff, Clock, ImagePlus, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, Pencil, Trash2, Eye, EyeOff, Clock, ImagePlus, X, Loader2 } from 'lucide-react'
 import { useBlogsAdmin, useCreateBlog, useUpdateBlog, useDeleteBlog } from '@/hooks/useBlogs'
 import { formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,7 @@ export default function AdminBlogsPage() {
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Blog | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [form, setForm] = useState({ title: '', content: '', excerpt: '', status: 'DRAFT' })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -181,7 +182,7 @@ export default function AdminBlogsPage() {
                   className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button onClick={() => { if (confirm("O'chirishni tasdiqlaysizmi?")) deleteBlog.mutate(blog.id) }}
+                <button onClick={() => setDeleteId(blog.id)}
                   className="p-2 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -190,6 +191,33 @@ export default function AdminBlogsPage() {
           ))}
         </div>
       )}
+
+      <AnimatePresence>
+        {deleteId && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteId(null)} />
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-2xl">
+              <h3 className="font-bold mb-2">Maqolani o'chirishni tasdiqlaysizmi?</h3>
+              <p className="text-sm text-muted-foreground mb-6">Bu amalni ortga qaytarib bo'lmaydi.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteId(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-border text-sm hover:bg-accent transition-colors">
+                  Bekor qilish
+                </button>
+                <button
+                  onClick={() => deleteBlog.mutate(deleteId, { onSuccess: () => setDeleteId(null) })}
+                  disabled={deleteBlog.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm disabled:opacity-60 transition-colors"
+                >
+                  {deleteBlog.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "O'chirish"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
